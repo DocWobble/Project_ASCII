@@ -1,0 +1,5 @@
+size: 12
+steps: 12
+proposals_per_step: 64
+temperature: 0.8
+listener_weight: 1.0

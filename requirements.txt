@@ -1,0 +1,6 @@
+numpy
+regex
+tqdm
+Pillow
+pydantic
+openai
