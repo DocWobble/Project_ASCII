@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 import random
 from dataclasses import dataclass
 from typing import Callable, Dict, List
@@ -9,7 +10,14 @@ import numpy as np
 from .energy import total_energy
 from .grid import Grid
 from .palette import PALETTE, BACKGROUND
-
+=======
+import random
+from typing import List, Callable, Dict
+from dataclasses import dataclass
+import numpy as np
+from .grid import Grid
+from .palette import PALETTE, BACKGROUND
+from .energy import total_energy
 
 @dataclass
 class DiffusionConfig:
@@ -19,6 +27,9 @@ class DiffusionConfig:
     anchors: List[str] | None = None
     temperature: float = 1.0
     listener_weight: float = 1.0
+    foreground: List[str] = None
+    anchors: List[str] = None
+    temperature: float = 1.0
     seed: int = 0
 
 
@@ -36,6 +47,7 @@ def propose_edits(g: Grid, palette: List[str], k: int) -> List[Grid]:
     return outs
 
 
+
 def run_diffusion(
     prompt: str,
     g: Grid,
@@ -43,6 +55,8 @@ def run_diffusion(
     listener: object | None = None,
     energy_fn: Callable[..., Dict[str, float]] = total_energy,
 ):
+
+def run_diffusion(prompt: str, g: Grid, cfg: DiffusionConfig, energy_fn: Callable[..., Dict[str, float]]):
     random.seed(cfg.seed)
     np.random.seed(cfg.seed)
     if cfg.foreground is None:
@@ -58,6 +72,8 @@ def run_diffusion(
     energy_terms = {**energy_terms, "best_total": best_e}
     energy_history = [energy_terms]
     print(f"step 0: {energy_terms}")
+    best = g.copy()
+    best_e = energy_fn(best, cfg.anchors, cfg.foreground)["total"]
     for t in range(cfg.steps):
         candidates = propose_edits(best, PALETTE, cfg.proposals_per_step)
         scored = []
@@ -88,3 +104,14 @@ def run_diffusion(
         print(f"step {t+1}: {terms}")
     return best, history, energy_history
 
+            terms = energy_fn(cand, cfg.anchors, cfg.foreground)
+            scored.append((terms["total"], cand))
+        if not scored:
+            break
+        scored.sort(key=lambda x: x[0])
+        new_e, new_best = scored[0]
+        # accept if better or with small probability
+        if new_e <= best_e or random.random() < np.exp((best_e - new_e) / max(1e-6, cfg.temperature)):
+            best, best_e = new_best, new_e
+            history.append(best.copy())
+    return best, history

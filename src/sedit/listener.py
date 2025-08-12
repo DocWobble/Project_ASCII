@@ -1,5 +1,6 @@
+from __future__ import annotations
+from typing import Optional
 import os
-
 from .grid import Grid
 from .palette import ANCHORS
 
@@ -9,7 +10,10 @@ class HeuristicListener:
 
     def score(self, prompt: str, grid: Grid) -> float:
         prompt = prompt.lower()
-        keys = [k for k in ANCHORS if k in prompt]
+        keys = []
+        for k in ANCHORS:
+            if k in prompt:
+                keys.append(k)
         if not keys:
             # neutral score
             return 0.0
@@ -68,4 +72,5 @@ class LLMListener:
         except Exception:
             # Network or parsing failure – treat as neutral.
             return 0.0
+
 
