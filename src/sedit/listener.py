@@ -26,14 +26,51 @@ class HeuristicListener:
 
 
 class LLMListener:
-    """Placeholder for an LLM-based listener. Implement using OpenAI or any LLM API."""
+    """LLM-based listener using OpenAI's API."""
 
     def __init__(self):
-        self.available = bool(os.environ.get("OPENAI_API_KEY"))
+        self.api_key = os.environ.get("OPENAI_API_KEY")
+        self.available = False
+        self.client = None
+        if self.api_key:
+            try:
+                import openai  # type: ignore
+
+                openai.api_key = self.api_key
+                self.client = openai
+                self.available = True
+            except Exception:
+                # Missing dependency or invalid key – fall back to heuristic listener.
+                self.available = False
 
     def score(self, prompt: str, grid: Grid) -> float:
-        if not self.available:
+        if not self.available or self.client is None:
             return 0.0
-        # TODO: Implement: caption the grid (serialized) and compute semantic similarity to prompt.
-        # For now, return 0.0; the autonomous agent should fill this in.
-        return 0.0
+
+        text = "\n".join(grid.as_lines())
+        try:
+            resp = self.client.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a critic scoring how well emoji art matches a prompt. "
+                            "Respond with only a number between 0 and 1."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Prompt: {prompt}\nArt:\n{text}\nScore:",
+                    },
+                ],
+                temperature=0.0,
+                max_tokens=1,
+            )
+            out = resp["choices"][0]["message"]["content"].strip()
+            return float(out)
+        except Exception:
+            # Network or parsing failure – treat as neutral.
+            return 0.0
+
+

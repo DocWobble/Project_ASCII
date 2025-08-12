@@ -10,3 +10,14 @@ This repo gives you a working scaffold:
 - a placeholder **compiler** that verbalizes the grid.
 
 > Goal: something you can hand to an autonomous coding agent to flesh out. It runs out of the box without internet; with an LLM key, it can use a listener for semantics.
+today.
+
+## CLI
+
+Run `python -m sedit.cli --prompt "pig" --size 12 --steps 12` to generate an
+emoji slate. The command logs a breakdown of each energy term at every step and
+saves intermediate PNGs, a `trajectory.gif`, an `energies.csv` file, and the
+final `final.png` and `final.txt` outputs. Adjust semantic guidance with
+`--listener-weight`.
+=======
+

@@ -1,4 +1,16 @@
 from __future__ import annotations
+
+
+import random
+from dataclasses import dataclass
+from typing import Callable, Dict, List
+
+import numpy as np
+
+from .energy import total_energy
+from .grid import Grid
+from .palette import PALETTE, BACKGROUND
+=======
 import random
 from typing import List, Callable, Dict
 from dataclasses import dataclass
@@ -7,11 +19,14 @@ from .grid import Grid
 from .palette import PALETTE, BACKGROUND
 from .energy import total_energy
 
-
 @dataclass
 class DiffusionConfig:
     steps: int = 12
     proposals_per_step: int = 64
+    foreground: List[str] | None = None
+    anchors: List[str] | None = None
+    temperature: float = 1.0
+    listener_weight: float = 1.0
     foreground: List[str] = None
     anchors: List[str] = None
     temperature: float = 1.0
@@ -32,6 +47,15 @@ def propose_edits(g: Grid, palette: List[str], k: int) -> List[Grid]:
     return outs
 
 
+
+def run_diffusion(
+    prompt: str,
+    g: Grid,
+    cfg: DiffusionConfig,
+    listener: object | None = None,
+    energy_fn: Callable[..., Dict[str, float]] = total_energy,
+):
+
 def run_diffusion(prompt: str, g: Grid, cfg: DiffusionConfig, energy_fn: Callable[..., Dict[str, float]]):
     random.seed(cfg.seed)
     np.random.seed(cfg.seed)
@@ -40,12 +64,46 @@ def run_diffusion(prompt: str, g: Grid, cfg: DiffusionConfig, energy_fn: Callabl
     if cfg.anchors is None:
         cfg.anchors = []
     history = [g.copy()]
+    energy_terms = energy_fn(
+        prompt, g, cfg.anchors, cfg.foreground, listener, cfg.listener_weight
+    )
+    best = g.copy()
+    best_e = energy_terms["total"]
+    energy_terms = {**energy_terms, "best_total": best_e}
+    energy_history = [energy_terms]
+    print(f"step 0: {energy_terms}")
     best = g.copy()
     best_e = energy_fn(best, cfg.anchors, cfg.foreground)["total"]
     for t in range(cfg.steps):
         candidates = propose_edits(best, PALETTE, cfg.proposals_per_step)
         scored = []
         for cand in candidates:
+            terms = energy_fn(
+                prompt, cand, cfg.anchors, cfg.foreground, listener, cfg.listener_weight
+            )
+            scored.append((terms["total"], cand, terms))
+        if not scored:
+            energy_history.append(dict(energy_history[-1]))
+            print(f"step {t+1}: {energy_history[-1]}")
+            continue
+        scored.sort(key=lambda x: x[0])
+        new_e, new_best, new_terms = scored[0]
+        accept = new_e <= best_e or random.random() < np.exp(
+            (best_e - new_e) / max(1e-6, cfg.temperature)
+        )
+        if accept:
+            best, best_e = new_best, new_e
+            history.append(best.copy())
+            terms = new_terms
+        else:
+            terms = energy_fn(
+                prompt, best, cfg.anchors, cfg.foreground, listener, cfg.listener_weight
+            )
+        terms = {**terms, "best_total": best_e}
+        energy_history.append(terms)
+        print(f"step {t+1}: {terms}")
+    return best, history, energy_history
+
             terms = energy_fn(cand, cfg.anchors, cfg.foreground)
             scored.append((terms["total"], cand))
         if not scored:
