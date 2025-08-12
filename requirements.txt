@@ -1,0 +1,5 @@
+numpy
+regex
+tqdm
+Pillow
+pydantic
