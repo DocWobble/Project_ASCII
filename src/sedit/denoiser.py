@@ -1,19 +1,22 @@
 from __future__ import annotations
+
 import random
-from typing import List, Callable, Dict
 from dataclasses import dataclass
+from typing import Callable, Dict, List
+
 import numpy as np
+
+from .energy import total_energy
 from .grid import Grid
 from .palette import PALETTE, BACKGROUND
-from .energy import total_energy
 
 
 @dataclass
 class DiffusionConfig:
     steps: int = 12
     proposals_per_step: int = 64
-    foreground: List[str] = None
-    anchors: List[str] = None
+    foreground: List[str] | None = None
+    anchors: List[str] | None = None
     temperature: float = 1.0
     listener_weight: float = 1.0
     seed: int = 0
@@ -84,3 +87,4 @@ def run_diffusion(
         energy_history.append(terms)
         print(f"step {t+1}: {terms}")
     return best, history, energy_history
+

@@ -1,16 +1,18 @@
 from __future__ import annotations
+
 import argparse
 import csv
 import os
 import re
 from pathlib import Path
 from typing import Dict, List
-from .grid import Grid
-from .palette import BACKGROUND, ANCHORS
-from .energy import total_energy
-from .denoiser import run_diffusion, DiffusionConfig
+
 from .compiler import compile_to_text
+from .denoiser import DiffusionConfig, run_diffusion
+from .energy import total_energy
+from .grid import Grid
 from .listener import HeuristicListener, LLMListener
+from .palette import ANCHORS, BACKGROUND
 
 
 def _slugify(text: str) -> str:
@@ -27,12 +29,7 @@ def run_prompt(
     listener_weight: float = 1.0,
     use_llm_listener: bool = False,
 ) -> Dict[str, object]:
-    """Run diffusion for a single prompt and persist artifacts.
-
-    Returns a dictionary containing the final grid, the energy history and
-    the compiled caption.  This is used by both the CLI and benchmarking
-    scripts.
-    """
+    """Run diffusion for a single prompt and persist artifacts."""
 
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -137,3 +134,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from typing import Dict, List, Optional
+
 import numpy as np
+
 from .grid import Grid
 
 
@@ -17,8 +20,18 @@ def connectedness_energy(g: Grid, foreground: List[str]) -> float:
                 visited[r, c] = True
                 while stack:
                     rr, cc = stack.pop()
-                    for nr, nc in ((rr + 1, cc), (rr - 1, cc), (rr, cc + 1), (rr, cc - 1)):
-                        if 0 <= nr < g.h and 0 <= nc < g.w and mask[nr, nc] and not visited[nr, nc]:
+                    for nr, nc in (
+                        (rr + 1, cc),
+                        (rr - 1, cc),
+                        (rr, cc + 1),
+                        (rr, cc - 1),
+                    ):
+                        if (
+                            0 <= nr < g.h
+                            and 0 <= nc < g.w
+                            and mask[nr, nc]
+                            and not visited[nr, nc]
+                        ):
                             visited[nr, nc] = True
                             stack.append((nr, nc))
     return max(0, comps - 1)
@@ -75,3 +88,4 @@ def total_energy(
     }
     terms["total"] = sum(terms.values())
     return terms
+

@@ -1,6 +1,5 @@
-from __future__ import annotations
-from typing import Optional
 import os
+
 from .grid import Grid
 from .palette import ANCHORS
 
@@ -10,10 +9,7 @@ class HeuristicListener:
 
     def score(self, prompt: str, grid: Grid) -> float:
         prompt = prompt.lower()
-        keys = []
-        for k in ANCHORS:
-            if k in prompt:
-                keys.append(k)
+        keys = [k for k in ANCHORS if k in prompt]
         if not keys:
             # neutral score
             return 0.0
@@ -26,15 +22,7 @@ class HeuristicListener:
 
 
 class LLMListener:
-    """LLM-based listener using OpenAI's API.
-
-    If an ``OPENAI_API_KEY`` is present and the ``openai`` package is installed,
-    this listener will query the chat completions API to obtain a semantic
-    similarity score between the prompt and the grid's emoji artwork.  The model
-    is asked to output a single floating point number in ``[0,1]`` where higher
-    means better alignment.  Any failure (missing package, network error, bad
-    response) results in a neutral score of ``0.0``.
-    """
+    """LLM-based listener using OpenAI's API."""
 
     def __init__(self):
         self.api_key = os.environ.get("OPENAI_API_KEY")
@@ -80,3 +68,4 @@ class LLMListener:
         except Exception:
             # Network or parsing failure – treat as neutral.
             return 0.0
+
